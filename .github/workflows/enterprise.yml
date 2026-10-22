@@ -61,3 +61,27 @@ jobs:
         run: docker compose -f monitoring/compose.yml logs --no-color
       - if: always()
         run: docker compose -f monitoring/compose.yml down -v
+
+  ansible-distros:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {image: 'debian:12', family: apt}
+          - {image: 'debian:13', family: apt}
+          - {image: 'rockylinux:9', family: dnf}
+          - {image: 'almalinux:9', family: dnf}
+          - {image: 'quay.io/centos/centos:stream9', family: dnf}
+          - {image: 'fedora:latest', family: dnf}
+          - {image: 'registry.access.redhat.com/ubi9/ubi:latest', family: dnf}
+    container: ${{ matrix.image }}
+    steps:
+      - if: matrix.family == 'apt'
+        run: apt-get update -qq && apt-get install -y -qq ansible-core bash git coreutils findutils procps gawk sed grep util-linux hostname python3 tar gzip
+      - if: matrix.family == 'dnf'
+        run: |
+          dnf install -y -q git bash coreutils findutils procps-ng gawk sed grep util-linux hostname python3 python3-pip tar gzip
+          python3 -m pip install 'ansible-core<2.16' --break-system-packages || python3 -m pip install 'ansible-core<2.16'
+      - uses: actions/checkout@v4
+      - run: ./ansible/test.sh
