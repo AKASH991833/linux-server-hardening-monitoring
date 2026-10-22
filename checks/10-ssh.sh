@@ -67,7 +67,7 @@ chk_SSH_006() {
 }
 fix_SSH_006() { _ssh_fix LoginGraceTime 30; }
 
-register SSH-007 medium SSH  "Idle SSH sessions are closed (ClientAliveInterval set, CountMax <= 3)"
+register SSH-007 medium SSH  "Unresponsive SSH clients are disconnected (not idle-user logout)"
 chk_SSH_007() {
   _ssh_need || return 2
   local i c; i=$(sshd_get ClientAliveInterval); c=$(sshd_get ClientAliveCountMax); i=${i:-0}; c=${c:-3}

@@ -52,7 +52,7 @@
     "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
     "control": "5.1.7",
     "page": "520",
-    "coverage": "partial: site policy and Match contexts need review",
+    "coverage": "partial: protocol liveness only, not idle-user logout; site policy and Match contexts need review",
     "source": "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jKUHPmZOdshGaLyHuw9GJGsLSRcNzYSo5QtrD8cSkie64pqYKOjejzN3-WX-Wo6O/n/idnreg0ywhtg/b/medium/o/CIS_Ubuntu_Linux_22.04_LTS_Benchmark_v2.0.0.pdf"
   },
   {
