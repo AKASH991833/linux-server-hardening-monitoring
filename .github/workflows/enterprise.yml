@@ -9,7 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: pip install ansible-core
+      - run: |
+          python3 -m venv /tmp/ansible-venv
+          /tmp/ansible-venv/bin/pip install ansible-core
+          echo /tmp/ansible-venv/bin >> "$GITHUB_PATH"
       - run: ./ansible/test.sh
       - name: Real live VM selected fixes and idempotence
         run: |
@@ -84,7 +87,7 @@ jobs:
         run: apt-get update -qq && apt-get install -y -qq ansible-core bash git coreutils findutils procps gawk sed grep util-linux hostname python3 tar gzip
       - if: matrix.family == 'dnf'
         run: |
-          dnf install -y -q git bash coreutils findutils procps-ng gawk sed grep util-linux hostname python3 python3-pip tar gzip
+          dnf install --allowerasing -y -q git bash coreutils findutils procps-ng gawk sed grep util-linux hostname python3 python3-pip tar gzip
           if grep -qi '^ID=fedora' /etc/os-release; then dnf install -y -q ansible-core; else python3 -m pip install 'ansible-core<2.16'; fi
       - uses: actions/checkout@v4
       - run: ./ansible/test.sh
