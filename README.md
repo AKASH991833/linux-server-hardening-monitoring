@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/AKASH991833/linux-server-hardening-monitoring/actions/workflows/ci.yml/badge.svg)](https://github.com/AKASH991833/linux-server-hardening-monitoring/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/AKASH991833/linux-server-hardening-monitoring)](https://github.com/AKASH991833/linux-server-hardening-monitoring/releases)
-![bash](https://img.shields.io/badge/language-bash-4EAA25) ![tested on](https://img.shields.io/badge/tested%20on-ubuntu%20%2B%205x%20RHEL--family-blue) ![license](https://img.shields.io/badge/license-MIT-blue)
+![bash](https://img.shields.io/badge/language-bash-4EAA25) ![tested on](https://img.shields.io/badge/tested%20on-ubuntu%20%2B%20debian%2012%2F13%20%2B%205x%20RHEL--family-blue) ![license](https://img.shields.io/badge/license-MIT-blue)
 
 One command-line tool (`hk`) that **audits** a Linux server against 43 security checks, **fixes** problems safely (with a dry-run first, an anti-lockout guard, and one-command **rollback**), **detects drift** from a known-good state, and **monitors** health with smart alerts. Pure Bash. No dependencies. Runs on Ubuntu, Debian, RHEL, Rocky, Alma.
 
@@ -156,7 +156,7 @@ lib/                common helpers, transactions, reports, baseline, monitor
 checks/             one file per area; each check = 1 register line + chk_ + optional fix_ function
 tests/run.sh        37 automated tests (offline fixtures + mock alert servers)
 tests/make-fixtures.sh   builds the "insecure" and "hardened" fake servers
-.github/workflows/ci.yml shellcheck + tests + a real-root job on an Ubuntu VM + the suite and a live audit across the RHEL family (Rocky 9, AlmaLinux 9, CentOS Stream 9, Fedora, Red Hat UBI 9)
+.github/workflows/ci.yml shellcheck + tests + a real-root job on an Ubuntu VM + the suite and a live audit across the RHEL family (Rocky 9, AlmaLinux 9, CentOS Stream 9, Fedora, Red Hat UBI 9) and on Debian 12 and 13
 INTERVIEW.md        how to explain this project in a job interview (pitch, design choices, 10 Q&A)
 CHANGELOG.md        release history
 ```
@@ -173,6 +173,7 @@ fix_MYORG_001() { fx_write "$(rp /etc/motd)" <<< "Authorized use only"; }
 - **Tested offline against fixtures and on a live non-root sandbox** (audit + monitor). The *live root* path (`sudo hk fix --apply`, `sshd -t`, `sysctl --system`, real `systemctl`) is exercised by the `live-root` job in GitHub Actions on a real Ubuntu VM; see the CI badge.
 - **CI result (Oct 22, 2026):** both jobs green on a real Ubuntu VM. The live-root run found and fixed 3 real bugs (a missing /run/sshd made the sshd check roll everything back, rollback did not restore live kernel values, and a very large world-writable file set made fix too slow, so it is now capped at 200 files per run).
 - **RHEL-family verified:** the `rhel-family` CI matrix runs the full suite plus a live audit on Rocky 9, AlmaLinux 9, CentOS Stream 9, Fedora (latest) and Red Hat UBI 9 (the free official Red Hat build - no RHEL subscription claimed). Live fix/rollback is verified on Ubuntu (the `live-root` job).
+- **Debian verified:** the `debian` CI matrix runs the full suite plus a live audit on Debian 12 (bookworm) and Debian 13 (trixie).
 - Webhook, Telegram and mail channels are covered by mock-server tests; they were not sent to real external accounts.
 - Not a replacement for a full CIS benchmark scanner (OpenSCAP, Lynis). It is a small, readable, safe starting point you can understand end to end.
 

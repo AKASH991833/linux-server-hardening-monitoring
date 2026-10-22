@@ -60,3 +60,26 @@ jobs:
         run: tests/run.sh
       - name: Live audit on a RHEL-family system
         run: ./hk audit --format text | tail -12
+  debian:
+    # The same suite plus a live audit on Debian 12 (bookworm, oldstable) and
+    # Debian 13 (trixie, stable).
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [debian-12, debian-13]
+        include:
+          - {distro: debian-12, image: debian:12}
+          - {distro: debian-13, image: debian:13}
+    container: ${{ matrix.image }}
+    steps:
+      - name: Install test dependencies (apt)
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends git bash diffutils findutils procps gawk sed grep python3 util-linux hostname passwd tar gzip ca-certificates
+      - uses: actions/checkout@v4
+      - name: Test suite on ${{ matrix.distro }}
+        run: tests/run.sh
+      - name: Live audit on a Debian system
+        run: ./hk audit --format text | tail -12

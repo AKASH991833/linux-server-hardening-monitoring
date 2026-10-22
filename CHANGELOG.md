@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.0] - 2026-10-22
+### Added
+- Debian CI matrix: the full offline test-suite plus a live audit on Debian 12 (bookworm)
+  and Debian 13 (trixie), alongside the existing Ubuntu and RHEL-family jobs.
+
 ## [1.1.0] - 2026-10-22
 ### Added
 - Rocky Linux 9 CI job: full offline test-suite plus a live audit on a RHEL-family system.
