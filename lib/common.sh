@@ -1,7 +1,7 @@
 # shellcheck shell=bash
 # hk - common helpers (colors, logging, root-prefix handling, config parsing)
 
-HK_VERSION="1.0.0"
+HK_VERSION="1.3.0"
 
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
   C_RED=$'\e[31m'; C_GRN=$'\e[32m'; C_YEL=$'\e[33m'; C_BLU=$'\e[34m'; C_DIM=$'\e[2m'; C_BLD=$'\e[1m'; C_OFF=$'\e[0m'

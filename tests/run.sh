@@ -122,5 +122,53 @@ rm -f "$HK_STATE/monitor.state"
 PATH="$T/bin:$PATH" HK_ALERT_CHANNELS=mail HK_MAIL_TO=root@lab ./hk monitor once --simulate "mem=99" >/dev/null
 assert "mail channel pipes the alert to mail(1)"            'grep -q "CRIT: mem = 99" "$T/mailout"'
 
+echo "== storage + cron checks (fixtures)"
+tests/make-fixtures.sh "$T/fx2" >/dev/null; I2="$T/fx2/insecure"; H2="$T/fx2/hardened"
+out=$(./hk audit --root "$I2" --only STO-001,STO-002,CRN-001,CRN-002,CRN-003)
+assert "fstab: 'default' typo + duplicate mountpoint caught"    'grep -q "default-typo" <<<"$out" && grep -q "duplicate:/data" <<<"$out"'
+assert "fstab: missing nofail on secondary mounts caught"       'grep -q "without nofail: /data" <<<"$out"'
+assert "cron: world-writable script run by a cron job caught"   'grep -q "backup.sh(777,as root)" <<<"$out"'
+assert "cron: curl | sh in cron caught"                         'grep -q "download|sh" <<<"$out"'
+assert "cron: missing cron.allow caught"                        'grep -q "no /etc/cron.allow" <<<"$out"'
+assert "hardened fixture passes all five new checks"            '[[ $(./hk audit --root "$H2" --only STO-001,STO-002,CRN-001,CRN-002,CRN-003 --format json | grep -c "\"status\":\"PASS\"") == 5 ]]'
+before=$(snapshot "$I2")
+./hk fix --root "$I2" STO-002 CRN-001 CRN-003 >/dev/null 2>&1
+assert "fix dry-run for the new checks changes nothing"         '[[ "$before" == "$(snapshot "$I2")" ]]'
+./hk fix --apply --root "$I2" STO-002 CRN-001 CRN-003 >"$T/apply2.log" 2>&1
+out=$(./hk audit --root "$I2" --only STO-002,CRN-001,CRN-003)
+assert "fix applied: nofail added, script o-w removed, cron.allow created" '! grep -q FAIL <<<"$out" && grep -q "nofail" "$I2/etc/fstab" && [[ $(stat -c %a "$I2/opt/scripts/backup.sh") == 775 ]] && grep -q root "$I2/etc/cron.allow"'
+assert "fstab typo (not auto-fixable) is still reported"        './hk audit --root "$I2" --only STO-001 | grep -q "default-typo"'
+tx=$(./hk tx list | tail -1 | awk '{print $1}')
+./hk rollback "$tx" >/dev/null 2>&1
+assert "rollback restores the previous state"                   '[[ $(stat -c %a "$I2/opt/scripts/backup.sh") == 777 ]] && [[ ! -e "$I2/etc/cron.allow" ]]'
+
+echo "== RAID / LVM checks + monitor metrics (mdstat / lvm2 output fixtures)"
+MD="$T/mdstat"; export HK_MDSTAT="$MD"
+printf 'md0 : active raid1 sdc1[1] sdb1[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n' > "$MD"
+assert "STO-003 passes on a healthy array"                      './hk audit --only STO-003 --format json | grep -q "\"status\":\"PASS\""'
+printf 'md0 : active raid1 sdc1[1](F) sdb1[0]\n      1046528 blocks super 1.2 [2/1] [U_]\n' > "$MD"
+assert "STO-003 fails on a degraded array with a failed member" './hk audit --only STO-003 | grep -q "md0(failed-member)" && ./hk audit --only STO-003 | grep -q "degraded 1/2"'
+export HK_CONSECUTIVE=1; rm -f "$HK_STATE/monitor.state"
+out=$(HK_ALERT_CHANNELS=stdout ./hk monitor once 2>&1)
+assert "monitor raises CRIT raid_degraded + raid_failed"        'grep -q "CRIT: raid_degraded = 1" <<<"$out" && grep -q "CRIT: raid_failed = 1" <<<"$out"'
+printf 'md0 : active raid1 sdc1[1] sdb1[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n' > "$MD"
+out=$(HK_ALERT_CHANNELS=stdout ./hk monitor once 2>&1)
+assert "monitor sends RECOVERED when the array is whole again"  'grep -q "RECOVERED: raid_degraded" <<<"$out"'
+unset HK_MDSTAT
+LF="$T/lvmfix"; mkdir -p "$LF"; export HK_LVM_FIXTURE="$LF"
+printf '  vg0|10737418240|268435456|1|wz--n-\n' > "$LF/vgs.txt"; : > "$LF/pvs.txt"
+printf '  vg0|root|owi-aos---|||\n  vg0|root_snap|swi-a-s---|96.00||root\n  vg0|pool|twi-aotz--|50.00|97.00|\n' > "$LF/lvs.txt"
+assert "STO-004 fails: VG 98%% allocated"                        './hk audit --only STO-004 | grep -q "VG:vg0(only 2% free)"'
+assert "STO-004 fails: snapshot 96%% full"                       './hk audit --only STO-004 | grep -q "vg0/root_snap(96%full)"'
+rm -f "$HK_STATE/monitor.state"
+out=$(HK_ALERT_CHANNELS=stdout ./hk monitor once 2>&1)
+assert "monitor: vg_used / lv_snap / thin_meta CRIT"            'grep -q "CRIT: vg_used:vg0 = 98" <<<"$out" && grep -q "CRIT: lv_snap:vg0/root_snap = 96" <<<"$out" && grep -q "CRIT: thin_meta:vg0/pool = 97" <<<"$out"'
+printf '  vg0|10737418240|5368709120|1|wz--n-\n' > "$LF/vgs.txt"; printf '  vg0|root|owi-aos---|||\n' > "$LF/lvs.txt"
+assert "STO-004 passes on a healthy VG"                         './hk audit --only STO-004 --format json | grep -q "\"status\":\"PASS\""'
+printf '  vg0|10737418240|5368709120|2|wz-pn-\n' > "$LF/vgs.txt"; printf '  [unknown]|vg0|a-m|missing\n' > "$LF/pvs.txt"
+rm -f "$HK_STATE/monitor.state"; out=$(HK_ALERT_CHANNELS=stdout ./hk monitor once 2>&1)
+assert "monitor: missing PV is CRIT"                            'grep -q "CRIT: lvm_missing_pv = 1" <<<"$out"'
+unset HK_LVM_FIXTURE HK_CONSECUTIVE
+
 echo; echo "passed: $PASS   failed: $FAIL"
 (( FAIL == 0 ))

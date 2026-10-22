@@ -3,7 +3,7 @@
 # and a Prometheus textfile export.
 
 # defaults (override in hk.conf)  format: WARN CRIT
-declare -A TH=( [load]="80 150" [mem]="85 95" [swap]="50 80" [disk]="80 90" [inode]="80 90" [logins]="20 100" [zombies]="5 20" [units_failed]="1 3" )
+declare -A TH=( [load]="80 150" [mem]="85 95" [swap]="50 80" [disk]="80 90" [inode]="80 90" [logins]="20 100" [zombies]="5 20" [units_failed]="1 3" [raid_degraded]="1 1" [raid_failed]="1 1" [vg_used]="90 95" [lv_snap]="80 95" [thin_data]="80 95" [thin_meta]="80 95" [lvm_missing_pv]="1 1" )
 HK_CONSECUTIVE=${HK_CONSECUTIVE:-2}       # breaches in a row before the first alert (stops flapping)
 HK_COOLDOWN_MIN=${HK_COOLDOWN_MIN:-60}    # repeat reminder for a still-CRITICAL metric after this many minutes
 HK_LOGIN_WINDOW_MIN=${HK_LOGIN_WINDOW_MIN:-10}
@@ -30,7 +30,47 @@ collect_metrics() {
     M[units_failed]=$(systemctl list-units --state=failed --no-legend 2>/dev/null | grep -c . || true)
   fi
   M[logins]=$(_failed_logins_count)
+  collect_storage_metrics
   local k; for k in "${!SIM[@]}"; do M[$k]=${SIM[$k]}; done
+}
+
+# RAID + LVM health as numeric metrics (HK_MDSTAT / HK_LVM_FIXTURE override the sources for tests)
+collect_storage_metrics() {
+  local md=${HK_MDSTAT:-/proc/mdstat}
+  if [[ -r $md ]] && grep -q '^md' "$md"; then
+    local line name="" deg=0 failed=0
+    while IFS= read -r line; do
+      [[ $line =~ ^(md[0-9a-zA-Z_]+)[[:space:]]*: ]] && { name=${BASH_REMATCH[1]}; [[ $line =~ :[[:space:]]*inactive ]] && deg=$((deg+1)); }
+      [[ -n $name && $line =~ \(F\) ]] && failed=$((failed+1))
+      if [[ -n $name && $line =~ \[([0-9]+)/([0-9]+)\][[:space:]]*\[[U_]+\] ]] && (( BASH_REMATCH[2] < BASH_REMATCH[1] )); then deg=$((deg+1)); fi
+    done < "$md"
+    M[raid_degraded]=$deg; M[raid_failed]=$failed
+  fi
+  local vgs="" lvs="" pvs=""
+  if [[ -n ${HK_LVM_FIXTURE:-} ]]; then vgs=$(cat "$HK_LVM_FIXTURE/vgs.txt" 2>/dev/null); lvs=$(cat "$HK_LVM_FIXTURE/lvs.txt" 2>/dev/null); pvs=$(cat "$HK_LVM_FIXTURE/pvs.txt" 2>/dev/null)
+  elif command -v vgs >/dev/null 2>&1; then
+    vgs=$(vgs --noheadings --separator '|' --units b --nosuffix -o vg_name,vg_size,vg_free 2>/dev/null)
+    lvs=$(lvs --noheadings --separator '|' --units b --nosuffix -o vg_name,lv_name,lv_attr,data_percent,metadata_percent,origin 2>/dev/null)
+    pvs=$(pvs --noheadings --separator '|' --units b --nosuffix -o pv_name,vg_name,pv_attr,pv_missing 2>/dev/null)
+  fi
+  [[ -n $vgs ]] || return 0
+  local vg size free x
+  while IFS='|' read -r vg size free x; do
+    vg=${vg// /}; [[ -n $vg ]] || continue; size=${size// /}; free=${free// /}
+    (( size > 0 )) && M["vg_used:$vg"]=$(( 100 - free * 100 / size ))
+  done <<<"$vgs"
+  local lv attr dp mp origin missing=0 t
+  while IFS='|' read -r vg lv attr dp mp origin; do
+    vg=${vg// /}; [[ -n $vg ]] || continue; lv=${lv// /}; attr=${attr// /}; dp=${dp// /}; mp=${mp// /}; origin=${origin// /}; dp=${dp%%.*}; mp=${mp%%.*}
+    t=${attr:0:1}
+    [[ ${attr:4:1} == I || ${attr:4:1} == S ]] && M["lv_snap:$vg/$lv"]=100
+    if [[ $dp =~ ^[0-9]+$ ]]; then
+      if [[ -n $origin ]]; then M["lv_snap:$vg/$lv"]=$dp; elif [[ $t == t ]]; then M["thin_data:$vg/$lv"]=$dp; [[ $mp =~ ^[0-9]+$ ]] && M["thin_meta:$vg/$lv"]=$mp; fi
+    fi
+  done <<<"$lvs"
+  local pv pvg pa pm
+  while IFS='|' read -r pv pvg pa pm; do pv=${pv// /}; [[ -n $pv ]] || continue; [[ $pv == *unknown* || ${pm// /} == missing ]] && missing=$((missing+1)); done <<<"$pvs"
+  M[lvm_missing_pv]=$missing
 }
 
 AUTH_LOG=""
