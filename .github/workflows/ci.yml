@@ -54,6 +54,8 @@ jobs:
       - name: Broken sshd config drill (hk validates and auto-rolls back)
         run: |
           sudo mkdir -p /etc/ssh/sshd_config.d
+          sudo sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config   # make SSH-001 fail first
+          sudo ./hk audit --only SSH-001 | grep -q '\[FAIL\]'
           echo 'GarbageDirective yes' | sudo tee /etc/ssh/sshd_config.d/98-broken.conf >/dev/null
           out=$(sudo ./hk fix --apply SSH-001 2>&1 || true)
           echo "$out"
