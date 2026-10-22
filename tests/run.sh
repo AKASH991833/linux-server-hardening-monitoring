@@ -82,5 +82,45 @@ assert "monitor exit code 2 on CRIT"            './hk monitor once --simulate "d
 unit=$(./hk monitor install --systemd)
 assert "systemd timer unit is generated"        'grep -q "OnUnitActiveSec=1min" <<<"$unit"'
 
+
+echo "== alert channels (mock webhook, telegram, mail servers)"
+cat > "$T/mockhttp.py" <<'PY'
+import http.server, sys
+hits = sys.argv[1]
+class H(http.server.BaseHTTPRequestHandler):
+    def do_POST(self):
+        body = self.rfile.read(int(self.headers.get('Content-Length', 0)))
+        with open(hits, 'a') as f: f.write(self.path + ' ' + body.decode() + '\n')
+        self.send_response(200); self.send_header('Content-Length', '2'); self.end_headers(); self.wfile.write(b'ok')
+    def log_message(self, *a): pass
+srv = http.server.HTTPServer(('127.0.0.1', 0), H)
+print(srv.server_address[1], flush=True)
+srv.serve_forever()
+PY
+: > "$T/hits"
+python3 "$T/mockhttp.py" "$T/hits" > "$T/port" 2>"$T/mock.err" &
+MOCKPID=$!
+for _ in $(seq 1 25); do [[ -s $T/port ]] && break; sleep 0.2; done
+PORT=$(cat "$T/port" 2>/dev/null || true)
+if [[ -n $PORT ]]; then
+  export HK_CONSECUTIVE=1
+  rm -f "$HK_STATE/monitor.state"
+  HK_ALERT_CHANNELS=webhook HK_WEBHOOK_URL="http://127.0.0.1:$PORT/hook" ./hk monitor once --simulate "mem=99" >/dev/null
+  assert "webhook channel POSTs JSON to the configured URL" 'grep -q "^/hook {\"text\":" "$T/hits"'
+  assert "webhook JSON carries level CRIT"                  'grep -q "\"level\":\"CRIT\"" "$T/hits"'
+  echo "TESTTOKEN123" > "$T/tok"
+  rm -f "$HK_STATE/monitor.state"
+  HK_ALERT_CHANNELS=telegram HK_TELEGRAM_API="http://127.0.0.1:$PORT" HK_TELEGRAM_TOKEN_FILE="$T/tok" HK_TELEGRAM_CHAT=4242 ./hk monitor once --simulate "mem=99" >/dev/null
+  assert "telegram channel calls bot API with the token"    'grep -q "/botTESTTOKEN123/sendMessage" "$T/hits"'
+  assert "telegram payload carries chat_id and text"        'grep -q "chat_id=4242" "$T/hits"'
+  kill $MOCKPID 2>/dev/null
+else
+  echo "  skip webhook/telegram mocks (no python3 http.server here; CI runs them)"
+fi
+mkdir -p "$T/bin"; printf '#!/bin/sh\ncat >> "%s/mailout"\n' "$T" > "$T/bin/mail"; chmod +x "$T/bin/mail"
+rm -f "$HK_STATE/monitor.state"
+PATH="$T/bin:$PATH" HK_ALERT_CHANNELS=mail HK_MAIL_TO=root@lab ./hk monitor once --simulate "mem=99" >/dev/null
+assert "mail channel pipes the alert to mail(1)"            'grep -q "CRIT: mem = 99" "$T/mailout"'
+
 echo; echo "passed: $PASS   failed: $FAIL"
 (( FAIL == 0 ))

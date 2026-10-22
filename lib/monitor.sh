@@ -8,6 +8,7 @@ HK_CONSECUTIVE=${HK_CONSECUTIVE:-2}       # breaches in a row before the first a
 HK_COOLDOWN_MIN=${HK_COOLDOWN_MIN:-60}    # repeat reminder for a still-CRITICAL metric after this many minutes
 HK_LOGIN_WINDOW_MIN=${HK_LOGIN_WINDOW_MIN:-10}
 HK_ALERT_CHANNELS=${HK_ALERT_CHANNELS:-log,stdout}
+HK_TELEGRAM_API=${HK_TELEGRAM_API:-https://api.telegram.org}   # override only for tests/mocks
 
 declare -A M            # metric name -> integer value
 declare -A SIM          # simulated values
@@ -70,7 +71,7 @@ send_alert() { # level metric message
       webhook)  [[ -n ${HK_WEBHOOK_URL:-} ]] && curl -fsS -m 10 -H 'Content-Type: application/json' -d "{\"text\":\"$(json_escape "$msg")\",\"level\":\"$lvl\"}" "$HK_WEBHOOK_URL" >/dev/null || warn "webhook failed" ;;
       telegram) # token is read from a FILE (never put tokens in hk.conf or git)
                 if [[ -r ${HK_TELEGRAM_TOKEN_FILE:-/nonexistent} && -n ${HK_TELEGRAM_CHAT:-} ]]; then
-                  curl -fsS -m 10 "https://api.telegram.org/bot$(cat "$HK_TELEGRAM_TOKEN_FILE")/sendMessage" --data-urlencode "chat_id=$HK_TELEGRAM_CHAT" --data-urlencode "text=$msg" >/dev/null || warn "telegram failed"
+                  curl -fsS -m 10 "$HK_TELEGRAM_API/bot$(cat "$HK_TELEGRAM_TOKEN_FILE")/sendMessage" --data-urlencode "chat_id=$HK_TELEGRAM_CHAT" --data-urlencode "text=$msg" >/dev/null || warn "telegram failed"
                 else warn "telegram channel needs HK_TELEGRAM_TOKEN_FILE and HK_TELEGRAM_CHAT"; fi ;;
       mail)     command -v mail >/dev/null 2>&1 && [[ -n ${HK_MAIL_TO:-} ]] && printf '%s\n' "$msg" | mail -s "$msg" "$HK_MAIL_TO" ;;
     esac

@@ -1,11 +1,16 @@
 # Linux Server Hardening + Monitoring Toolkit (`hk`)
 
 [![CI](https://github.com/AKASH991833/linux-server-hardening-monitoring/actions/workflows/ci.yml/badge.svg)](https://github.com/AKASH991833/linux-server-hardening-monitoring/actions/workflows/ci.yml)
-![bash](https://img.shields.io/badge/language-bash-4EAA25) ![license](https://img.shields.io/badge/license-MIT-blue)
+[![release](https://img.shields.io/github/v/release/AKASH991833/linux-server-hardening-monitoring)](https://github.com/AKASH991833/linux-server-hardening-monitoring/releases)
+![bash](https://img.shields.io/badge/language-bash-4EAA25) ![tested on](https://img.shields.io/badge/tested%20on-ubuntu%20%2B%20rocky%209-blue) ![license](https://img.shields.io/badge/license-MIT-blue)
 
 One command-line tool (`hk`) that **audits** a Linux server against 43 security checks, **fixes** problems safely (with a dry-run first, an anti-lockout guard, and one-command **rollback**), **detects drift** from a known-good state, and **monitors** health with smart alerts. Pure Bash. No dependencies. Runs on Ubuntu, Debian, RHEL, Rocky, Alma.
 
 ![audit](docs/img/audit-insecure.png)
+
+**20-second demo** (real output: audit a bad server, fix it, re-audit, roll back):
+
+![demo](docs/img/demo.gif)
 
 ## What makes this different from a normal "hardening script"
 
@@ -21,7 +26,9 @@ One command-line tool (`hk`) that **audits** a Linux server against 43 security 
 | **Prometheus export** | Writes `hk.prom` in node_exporter *textfile* format. Grafana-ready. |
 | **Score + trend** | 0-100 weighted score (critical=10, high=6, medium=3, low=1) with grade A-F, JSON for CI/CD, and a self-contained HTML report with a score trend line. |
 
-## Quick start (2 minutes)
+> Preparing for an interview? Read [INTERVIEW.md](INTERVIEW.md) (60-second pitch, design choices, 10 Q&A).
+
+## Quick start (60 seconds to your first score)
 
 ```bash
 git clone https://github.com/AKASH991833/linux-server-hardening-monitoring.git
@@ -147,9 +154,11 @@ Config: copy `config/hk.conf.example` to `/etc/hk/hk.conf`. State lives in `/var
 hk                  main command
 lib/                common helpers, transactions, reports, baseline, monitor
 checks/             one file per area; each check = 1 register line + chk_ + optional fix_ function
-tests/run.sh        32 automated tests (offline fixtures)
+tests/run.sh        37 automated tests (offline fixtures + mock alert servers)
 tests/make-fixtures.sh   builds the "insecure" and "hardened" fake servers
-.github/workflows/ci.yml shellcheck + tests + a real-root job on an Ubuntu VM
+.github/workflows/ci.yml shellcheck + tests + a real-root job on an Ubuntu VM + the suite and a live audit on Rocky Linux 9
+INTERVIEW.md        how to explain this project in a job interview (pitch, design choices, 10 Q&A)
+CHANGELOG.md        release history
 ```
 Add your own check in 5 lines:
 ```bash
@@ -159,12 +168,12 @@ fix_MYORG_001() { fx_write "$(rp /etc/motd)" <<< "Authorized use only"; }
 ```
 
 ## Honest test report
-- 32 automated tests pass locally (`tests/run.sh`): audit scoring, JSON validity, SSH first-match/Match handling, dry-run changes nothing, anti-lockout, apply, **rollback is byte-identical**, drift (changed key, new SUID, new user), monitor flap suppression, cooldown, recovery, Prometheus output, systemd unit generation.
+- 37 automated tests pass locally (`tests/run.sh`): audit scoring, JSON validity, SSH first-match/Match handling, dry-run changes nothing, anti-lockout, apply, **rollback is byte-identical**, drift (changed key, new SUID, new user), monitor flap suppression, cooldown, recovery, Prometheus output, systemd unit generation, and **delivery of webhook, Telegram and mail alerts to local mock servers** (payloads verified).
 - ShellCheck clean (`-S error`).
 - **Tested offline against fixtures and on a live non-root sandbox** (audit + monitor). The *live root* path (`sudo hk fix --apply`, `sshd -t`, `sysctl --system`, real `systemctl`) is exercised by the `live-root` job in GitHub Actions on a real Ubuntu VM; see the CI badge.
 - **CI result (Oct 22, 2026):** both jobs green on a real Ubuntu VM. The live-root run found and fixed 3 real bugs (a missing /run/sshd made the sshd check roll everything back, rollback did not restore live kernel values, and a very large world-writable file set made fix too slow, so it is now capped at 200 files per run).
-- RHEL-family package/service names are handled but were not run on a RHEL machine.
-- Webhook, Telegram and mail channels are implemented but only the `log`/`stdout` channels are covered by automated tests; Telegram and mail were not sent to real accounts.
+- **RHEL-family verified:** the `rocky` CI job runs the full suite plus a live audit on Rocky Linux 9. Live fix/rollback is verified on Ubuntu (the `live-root` job).
+- Webhook, Telegram and mail channels are covered by mock-server tests; they were not sent to real external accounts.
 - Not a replacement for a full CIS benchmark scanner (OpenSCAP, Lynis). It is a small, readable, safe starting point you can understand end to end.
 
 ## Safety notes
