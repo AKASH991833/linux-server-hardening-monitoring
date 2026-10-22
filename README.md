@@ -174,6 +174,7 @@ fix_MYORG_001() { fx_write "$(rp /etc/motd)" <<< "Authorized use only"; }
 - **CI result (Oct 22, 2026):** both jobs green on a real Ubuntu VM. The live-root run found and fixed 3 real bugs (a missing /run/sshd made the sshd check roll everything back, rollback did not restore live kernel values, and a very large world-writable file set made fix too slow, so it is now capped at 200 files per run).
 - **RHEL-family verified:** the `rhel-family` CI matrix runs the full suite plus a live audit on Rocky 9, AlmaLinux 9, CentOS Stream 9, Fedora (latest) and Red Hat UBI 9 (the free official Red Hat build - no RHEL subscription claimed). Live fix/rollback is verified on Ubuntu (the `live-root` job).
 - **Debian verified:** the `debian` CI matrix runs the full suite plus a live audit on Debian 12 (bookworm) and Debian 13 (trixie).
+- **Failure drills (live-root job, every push):** a real ext4 filesystem on a loop device is filled past 90% and the monitor must raise `CRIT: disk:` (and stay quiet after cleanup), and a hand-broken sshd drop-in must make `hk fix` validate, refuse, and auto-roll back, leaving sshd healthy.
 - Webhook, Telegram and mail channels are covered by mock-server tests; they were not sent to real external accounts.
 - Not a replacement for a full CIS benchmark scanner (OpenSCAP, Lynis). It is a small, readable, safe starting point you can understand end to end.
 

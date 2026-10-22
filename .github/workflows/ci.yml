@@ -37,6 +37,30 @@ jobs:
           sudo ./hk drift
       - name: Monitor once
         run: ./hk monitor once || true
+      - name: Real disk-full drill (a real filesystem filled past 90% raises CRIT)
+        run: |
+          dd if=/dev/zero of=/tmp/drill.img bs=1M count=24
+          sudo mkfs.ext4 -q -F /tmp/drill.img
+          sudo mkdir -p /tmp/drill-mnt
+          sudo mount -o loop /tmp/drill.img /tmp/drill-mnt
+          sudo dd if=/dev/zero of=/tmp/drill-mnt/filler bs=1M count=20 || true
+          df -P /tmp/drill-mnt
+          HK_ALERT_CHANNELS=log HK_CONSECUTIVE=1 HK_STATE=/tmp/hk-drill sudo -E ./hk monitor once >/dev/null || true
+          grep -q 'CRIT: disk:/tmp/drill-mnt' /tmp/hk-drill/alerts.log
+          sudo rm -f /tmp/drill-mnt/filler
+          HK_ALERT_CHANNELS=log HK_CONSECUTIVE=1 HK_STATE=/tmp/hk-drill2 sudo -E ./hk monitor once >/dev/null || true
+          ! grep -q 'CRIT: disk:/tmp/drill-mnt' /tmp/hk-drill2/alerts.log
+          sudo umount /tmp/drill-mnt
+      - name: Broken sshd config drill (hk validates and auto-rolls back)
+        run: |
+          sudo mkdir -p /etc/ssh/sshd_config.d
+          echo 'GarbageDirective yes' | sudo tee /etc/ssh/sshd_config.d/98-broken.conf >/dev/null
+          out=$(sudo ./hk fix --apply SSH-001 2>&1 || true)
+          echo "$out"
+          grep -qi 'rolling back automatically' <<<"$out"
+          ! sudo sshd -t 2>/dev/null   # while the broken drop-in exists, sshd -t must fail
+          sudo rm -f /etc/ssh/sshd_config.d/98-broken.conf /etc/ssh/sshd_config.d/99-hk-hardening.conf
+          sudo sshd -t   # after cleanup the live config is valid again
   rhel-family:
     # Same checks across the Red Hat family: Rocky, AlmaLinux, CentOS Stream, Fedora,
     # and Red Hat UBI 9 (the free official Red Hat image - not a RHEL subscription).

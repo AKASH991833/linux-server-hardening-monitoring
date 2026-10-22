@@ -4,6 +4,9 @@
 ### Added
 - Debian CI matrix: the full offline test-suite plus a live audit on Debian 12 (bookworm)
   and Debian 13 (trixie), alongside the existing Ubuntu and RHEL-family jobs.
+- Real failure drills in the live-root CI job: a real filesystem (ext4 on a loop device)
+  filled past 90% must trigger a CRIT disk alert (and no alert after cleanup), and a
+  hand-broken sshd drop-in must trigger hk's config validation and automatic rollback.
 
 ## [1.1.0] - 2026-10-22
 ### Added
