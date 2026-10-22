@@ -11,3 +11,5 @@ IMPORTANT: this container reports its own container-visible /proc, filesystems a
 `promtool check rules monitoring/alerts.yml` checks syntax. From monitoring run `promtool test rules alerts.test.yml` to test an alert firing and recovering against synthetic samples. Compose CI also verifies Prometheus sees the real exporter and Grafana loads the provisioned dashboard. Screenshots are from that running dashboard, not hand-drawn metrics.
 
 Exercise: query hk_metric{name="mem"}; explain the % units. Explain why no disk: series in an overlay-only container is not a healthy disk verdict. Simulate samples only in the rule test file, never falsify live production data.
+
+The checked-in screenshot was verified from the actual local exporter, Prometheus 3.2.1 and Grafana 11.6.0, with real samples, not synthetic chart data. Root filesystem is the root visible to that lab; RAID No data is expected without md arrays. It does not substitute for the separate Compose CI check.
