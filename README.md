@@ -212,3 +212,9 @@ The shared enterprise hub is [linux-server-hardening-monitoring](https://github.
 Each repository has .deb/.rpm build/install/remove CI. The Pages publication workflow builds signed APT/RPM metadata and tests installs through the repository before deployment. Keys rotate each publication and expire in 30 days; RPM package headers are unsigned. This is a learning channel, not unattended production updates. See packaging/LEARN.md before trusting/installing anything.
 
 Tests distinguish fixtures from real services and kernel work. v1.3 storage limits still apply: real LVM is verified only on the Ubuntu runner and Debian 12, not every container. A green package install does not verify every workload command. CI artifacts hold generated incident reports and Grafana screenshots.
+
+### Real local dashboard preview
+
+![Running Grafana dashboard](monitoring/screenshots/grafana.png)
+
+Screenshot of the actual exporter, Prometheus and Grafana 11.6 services running locally. Values are live to that lab, not a production server. The RAID panel correctly shows No data because no md array is present. The Compose CI screenshot may have no root filesystem series because its root is an overlay filesystem.

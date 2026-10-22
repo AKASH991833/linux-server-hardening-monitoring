@@ -6,7 +6,7 @@
   "refresh": "15s",
   "timezone": "browser",
   "time": {
-    "from": "now-30m",
+    "from": "now-5m",
     "to": "now"
   },
   "panels": [
@@ -132,7 +132,7 @@
         {
           "expr": "hk_exporter_success",
           "refId": "A",
-          "legendFormat": "{{name}}"
+          "legendFormat": "collector"
         }
       ],
       "fieldConfig": {
@@ -151,7 +151,7 @@
     },
     {
       "id": 5,
-      "title": "Filesystem used",
+      "title": "Root filesystem used",
       "type": "timeseries",
       "datasource": {
         "type": "prometheus",
@@ -165,7 +165,7 @@
       },
       "targets": [
         {
-          "expr": "hk_metric{name=~\"disk:.*\"}",
+          "expr": "hk_metric{name=\"disk:/\"}",
           "refId": "A",
           "legendFormat": "{{name}}"
         }
