@@ -115,5 +115,12 @@ Map each check to CIS benchmark IDs and emit a compliance matrix; OpenSCAP conte
 per-check `HK_SKIP` policy file; signed baselines; an agent mode that ships drift + metrics to a
 central collector (the Prometheus textfile export is the first step).
 
+## Storage and cron checks (v1.3.0)
+**Why audit fstab and cron in a hardening tool?** A typo in fstab or a missing disk without `nofail` stops boot; a world-writable script run by root cron is a privilege escalation. Both are cheap to find.
+
+**How is it tested without trusting fixtures?** Fixtures prove parsing. The real drill builds md RAID1 and LVM on loop devices, breaks them, and asserts the audit and the monitor alert, then recovers and asserts the RECOVERED notice.
+
+**What does it not do?** STO-003/004 skip rather than pass when mdadm/lvm2 are absent. Container runs share the runner kernel, so snapshot drills need the host `dm-snapshot` module.
+
 ## Honest test status
 See the README "Honest test report" - it is kept in sync with CI and names exactly what ran where.

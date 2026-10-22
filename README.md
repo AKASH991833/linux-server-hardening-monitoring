@@ -134,6 +134,18 @@ Test your alerting any time without breaking anything: `hk monitor once --simula
 ```
 ![html](docs/img/html-report.png)
 
+### Storage and cron checks (v1.3.0)
+| ID | What it checks | Fix |
+|---|---|---|
+| STO-001 | `/etc/fstab` lines parse and devices exist | report |
+| STO-002 | secondary mounts have `nofail` (a missing disk must not block boot) | `hk fix` |
+| STO-003 | md RAID complete, not inactive/degraded (live only) | report |
+| STO-004 | LVM VG free space, snapshot and thin-pool fullness (live only) | report |
+| CRN-001 | scripts run by system cron are not world-writable | `hk fix`, rollback supported |
+| CRN-002 | root cron does not run from /tmp or pipe `curl` into a shell | report |
+| CRN-003 | `/etc/cron.allow` exists | `hk fix` |
+`hk monitor` also alerts on RAID degraded/failed, VG usage, snapshot fullness and thin-pool data/metadata, and sends a RECOVERED notice when it clears.
+
 ## Command reference
 
 | Command | What it does |
@@ -177,6 +189,8 @@ fix_MYORG_001() { fx_write "$(rp /etc/motd)" <<< "Authorized use only"; }
 - **Failure drills (live-root job, every push):** a real ext4 filesystem on a loop device is filled past 90% and the monitor must raise `CRIT: disk:` (and stay quiet after cleanup), and a hand-broken sshd drop-in must make `hk fix` validate, refuse, and auto-roll back, leaving sshd healthy.
 - Webhook, Telegram and mail channels are covered by mock-server tests; they were not sent to real external accounts.
 - Not a replacement for a full CIS benchmark scanner (OpenSCAP, Lynis). It is a small, readable, safe starting point you can understand end to end.
+
+**v1.3.0 storage tests:** fixtures (hardened = pass, insecure = fail) in `tests/run.sh`; real drills in `tests/storage-live.sh` as root on loop devices: Ubuntu runner (everything), Debian 12 container (everything, host modules mounted); Debian 13, Rocky, Alma, CentOS Stream and Fedora containers run the RAID and cron drills and skip snapshot drills if the kernel target is not loadable. UBI 9 runs fixtures only. See the CI badge for the current state.
 
 ## Safety notes
 Run `hk fix` without `--apply` first. Keep a second SSH session open when changing SSH settings. hk never touches firewall rules, never restarts services other than reloading sshd after a validated config, and never edits files outside the list in the dry-run output.

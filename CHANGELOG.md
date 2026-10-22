@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0] - 2026-10-22
+### Added
+- Audit checks STO-001 (fstab validity), STO-002 (`nofail` on secondary mounts, fixable), STO-003 (software RAID health), STO-004 (LVM free space, snapshot and thin-pool fullness), CRN-001 (world-writable scripts run by system cron, fixable with rollback), CRN-002 (root cron running from /tmp or `curl|sh`), CRN-003 (cron.allow present, fixable).
+- Monitor metrics: `raid_degraded`, `raid_failed`, `vg_used:VG`, `lv_snap:VG/LV`, `thin_data`, `thin_meta`, `lvm_missing_pv`, with recovery notices.
+- Real drills (`tests/storage-live.sh`): md RAID1 degrade and rebuild, LVM snapshot overflow, VG 100% allocated, live `/etc/cron.d` hygiene including `hk fix` and rollback.
+### Honest limits
+- STO-003/004 only run on a live system with mdadm/lvm2; elsewhere they are skipped, not passed. Snapshot drills need `dm-snapshot` and are skipped in containers where the kernel target is not loadable.
+
 ## [1.2.0] - 2026-10-22
 ### Added
 - Debian CI matrix: the full offline test-suite plus a live audit on Debian 12 (bookworm)
