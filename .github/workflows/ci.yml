@@ -43,7 +43,7 @@ jobs:
     container: rockylinux:9
     steps:
       - name: Install test dependencies (dnf)
-        run: dnf install -y -q git bash coreutils findutils procps-ng gawk sed grep python3 util-linux hostname shadow-utils which tar gzip
+        run: dnf install -y -q git bash findutils procps-ng gawk sed grep python3 util-linux hostname shadow-utils which tar gzip
       - uses: actions/checkout@v4
       - name: Test suite on Rocky 9
         run: tests/run.sh
