@@ -162,6 +162,7 @@ fix_MYORG_001() { fx_write "$(rp /etc/motd)" <<< "Authorized use only"; }
 - 32 automated tests pass locally (`tests/run.sh`): audit scoring, JSON validity, SSH first-match/Match handling, dry-run changes nothing, anti-lockout, apply, **rollback is byte-identical**, drift (changed key, new SUID, new user), monitor flap suppression, cooldown, recovery, Prometheus output, systemd unit generation.
 - ShellCheck clean (`-S error`).
 - **Tested offline against fixtures and on a live non-root sandbox** (audit + monitor). The *live root* path (`sudo hk fix --apply`, `sshd -t`, `sysctl --system`, real `systemctl`) is exercised by the `live-root` job in GitHub Actions on a real Ubuntu VM; see the CI badge.
+- **CI result (Oct 22, 2026):** both jobs green on a real Ubuntu VM. The live-root run found and fixed 3 real bugs (a missing /run/sshd made the sshd check roll everything back, rollback did not restore live kernel values, and a very large world-writable file set made fix too slow, so it is now capped at 200 files per run).
 - RHEL-family package/service names are handled but were not run on a RHEL machine.
 - Webhook, Telegram and mail channels are implemented but only the `log`/`stdout` channels are covered by automated tests; Telegram and mail were not sent to real accounts.
 - Not a replacement for a full CIS benchmark scanner (OpenSCAP, Lynis). It is a small, readable, safe starting point you can understand end to end.
