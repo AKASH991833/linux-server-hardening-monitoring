@@ -31,9 +31,14 @@ chk_FS_003() {
   [[ -z $bad ]]
 }
 fix_FS_003() {
-  local d f
+  # Safety cap: a big tree (e.g. a conda install under /usr) can hold thousands of such files.
+  # Fix the first 200 per run, report the rest, and let the admin review before running again.
+  local d f n=0 cap=200
   for d in etc usr bin sbin lib; do [[ -d $(rp /$d) ]] || continue
-    while IFS= read -r f; do fx_chmod o-w "$f"; done < <(find "$(rp /$d)" -xdev -type f -perm -0002 2>/dev/null)
+    while IFS= read -r f; do
+      if (( n >= cap )); then echo "  FS-003: cap of $cap files reached, run 'hk fix --apply' again after reviewing" >&2; return 0; fi
+      fx_chmod o-w "$f"; n=$((n+1))
+    done < <(find "$(rp /$d)" -xdev -type f -perm -0002 2>/dev/null)
   done
 }
 
