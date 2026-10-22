@@ -23,6 +23,7 @@ if [[ -n ${STORAGE_NO_UDEV:-} ]]; then
   grep -q 'conf.d' /etc/lvm/lvm.conf 2>/dev/null || printf 'activation {\n udev_sync = 0\n udev_rules = 0\n}\n' >> /etc/lvm/lvm.conf
 fi
 echo "lvm: $(lvm version 2>&1 | head -1 | xargs)"; mdadm --version 2>&1 | head -1
+modprobe dm-snapshot 2>/dev/null; SNAPOK=0; dmsetup targets 2>/dev/null | grep -qw snapshot && SNAPOK=1; (( SNAPOK )) || echo "NOTE: kernel dm-snapshot target unavailable in this container - snapshot drills SKIPPED (they run on the Ubuntu runner job)"
 export HK_CONSECUTIVE=1 HK_ALERT_CHANNELS=stdout
 
 echo "== real md-RAID1"
@@ -47,6 +48,7 @@ L1=$(mkloop pv1 300M)
 pvcreate -y "$L1" >/dev/null 2>&1 && vgcreate vgh "$L1" >/dev/null 2>&1 && lvcreate -y -n data -L 100M vgh >/dev/null 2>&1 || { bad "lvm setup"; exit 1; }
 mkfs.ext4 -q /dev/vgh/data; mkdir -p "$T/m"; mount /dev/vgh/data "$T/m"; MNTS+=("$T/m")
 assert "STO-004 passes on a fresh VG"                      '$HK audit --only STO-004 --format json | grep -q "\"status\":\"PASS\""'
+if (( SNAPOK )); then
 lvcreate -y -s -n snap -L 8M vgh/data >/dev/null 2>&1
 dd if=/dev/urandom of="$T/m/big" bs=1M count=40 conv=fsync 2>/dev/null; sync
 out=$($HK audit --only STO-004 2>&1)
@@ -54,6 +56,7 @@ assert "STO-004 FAILS when the snapshot really overflowed" 'grep -q "FAIL" <<<"$
 rm -f "$HK_STATE/monitor.state"; out=$($HK monitor once 2>&1)
 assert "monitor: lv_snap CRIT on the real snapshot"        'grep -q "CRIT: lv_snap:vgh/snap = 100" <<<"$out"'
 lvremove -f vgh/snap >/dev/null 2>&1
+else echo "  SKIP snapshot overflow drills (no dm-snapshot)"; fi
 lvcreate -y -n filler -l 100%FREE vgh >/dev/null 2>&1
 out=$($HK audit --only STO-004 2>&1)
 assert "STO-004 FAILS when the VG is 100%% allocated"       'grep -q "VG:vgh" <<<"$out"'
