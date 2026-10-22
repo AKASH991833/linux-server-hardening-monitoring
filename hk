@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# hk - Linux server hardening audit, safe fix (with rollback), drift detection and health monitoring
+# https://github.com/AKASH991833/linux-server-hardening-monitoring
+set -uo pipefail
+
+HK_HOME=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+# shellcheck source=lib/common.sh
+for f in common tx report baseline monitor; do source "$HK_HOME/lib/$f.sh"; done
+
+R=""                                   # root prefix (empty = this live system)
+STATE="${HK_STATE:-}"
+[[ -z $STATE ]] && { [[ $EUID -eq 0 ]] && STATE=/var/lib/hk || STATE="$HOME/.local/state/hk"; }
+
+# ---- check registry ----------------------------------------------------------------------
+CHECK_IDS=(); declare -A C_SEV C_CAT C_TITLE
+register() { CHECK_IDS+=("$1"); C_SEV[$1]=$2; C_CAT[$1]=$3; C_TITLE[$1]=$4; }
+for f in "$HK_HOME"/checks/*.sh; do source "$f"; done
+
+usage() {
+cat <<U
+hk $HK_VERSION - Linux hardening audit, safe fixes with rollback, drift detection, health monitoring
+
+AUDIT
+  hk audit   [--root DIR] [--format text|json|html|all] [--out DIR] [--category C] [--only ID,ID] [--min-score N]
+  hk checks                       list every check (id, severity, title)
+FIX (dry-run unless --apply)
+  hk fix     [--apply] [--root DIR] [--all | ID ID ...]
+  hk tx list                      list fix transactions
+  hk rollback TXID                undo a fix transaction completely
+DRIFT
+  hk baseline create [--root DIR]     remember "known good" (files, SUID list, users, ports)
+  hk drift   [--root DIR]             show what changed since the baseline (exit 1 if drift)
+MONITOR
+  hk monitor once [--simulate "mem=97,disk:/=92,logins=40"]
+  hk monitor install [--systemd|--cron] [--apply]
+  hk monitor attackers            top IPs behind failed SSH logins
+
+--root DIR audits an OFFLINE root filesystem (a mounted disk image, a backup, a container rootfs):
+every path is read from DIR/etc/..., live-only checks are skipped.
+Environment: HK_STATE (state dir), HK_CONF (config file), NO_COLOR=1
+U
+}
+
+# ---- run checks --------------------------------------------------------------------------
+RESULTS=""; DETAIL=""
+run_checks() { # filters: $1=category  $2=comma list of ids
+  local id fn st fixable
+  : > "$RESULTS"
+  for id in "${CHECK_IDS[@]}"; do
+    [[ -n ${1:-} && ${C_CAT[$id]} != "${1^^}" ]] && continue
+    [[ -n ${2:-} && ",${2^^}," != *",$id,"* ]] && continue
+    fn="chk_${id//-/_}"; DETAIL=""
+    "$fn"; local rc=$?
+    case $rc in 0) st=PASS;; 1) st=FAIL;; *) st=SKIP;; esac
+    fixable=no; declare -F "fix_${id//-/_}" >/dev/null && fixable=yes
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$id" "${C_SEV[$id]}" "${C_CAT[$id]}" "$st" "${C_TITLE[$id]}" "$DETAIL" "$fixable" >> "$RESULTS"
+  done
+}
+
+cmd_audit() {
+  local fmt=text out="" cat="" only="" min=""
+  while (( $# )); do case $1 in
+    --root) R=${2%/}; shift 2;; --format) fmt=$2; shift 2;; --out) out=$2; shift 2;;
+    --category) cat=$2; shift 2;; --only) only=$2; shift 2;; --min-score) min=$2; shift 2;;
+    *) die "unknown option: $1";; esac; done
+  [[ -z $R || -d $R ]] || die "--root $R is not a directory"
+  RESULTS=$(mktemp); trap 'rm -f "$RESULTS"' EXIT
+  run_checks "$cat" "$only"; compute_score
+  case $fmt in
+    text) report_text ;;
+    json) report_json ;;
+    html) if [[ -n $out ]]; then mkdir -p "$out"; report_html > "$out/report.html"; info "wrote $out/report.html"; else report_html; fi ;;
+    all)  out=${out:-hk-report}; mkdir -p "$out"
+          C_RED=""; C_GRN=""; C_YEL=""; C_BLU=""; C_DIM=""; C_BLD=""; C_OFF=""
+          report_text > "$out/report.txt"; report_json > "$out/report.json"; report_html > "$out/report.html"
+          cp "$RESULTS" "$out/results.tsv"; info "wrote $out/{report.txt,report.json,report.html,results.tsv}  score=$SCORE grade=$GRADE" ;;
+    *) die "unknown format $fmt" ;;
+  esac
+  [[ -z $R ]] && record_history
+  if [[ -n $min ]] && (( SCORE < min )); then return 1; fi
+  return 0
+}
+
+cmd_fix() {
+  local apply=0 all=0 ids=()
+  while (( $# )); do case $1 in
+    --apply) apply=1; shift;; --root) R=${2%/}; shift 2;; --all) all=1; shift;;
+    -*) die "unknown option: $1";; *) ids+=("${1^^}"); shift;; esac; done
+  (( all || ${#ids[@]} )) || die "tell me what to fix: hk fix --all   or   hk fix SSH-001 ACC-004"
+  DRY=$(( ! apply ))
+  [[ -z $R || -d $R ]] || die "--root $R is not a directory"
+  if (( apply )) && [[ -z $R && $EUID -ne 0 ]]; then die "--apply on a live system needs root (use sudo)"; fi
+  RESULTS=$(mktemp); trap 'rm -f "$RESULTS"' EXIT
+  run_checks "" ""
+  local id sev cat st title detail fixable todo=()
+  while IFS=$'\t' read -r id sev cat st title detail fixable; do
+    [[ $st == FAIL && $fixable == yes ]] || continue
+    (( all )) && { todo+=("$id"); continue; }
+    [[ " ${ids[*]} " == *" $id "* ]] && todo+=("$id")
+  done < "$RESULTS"
+  (( ${#todo[@]} )) || { info "${C_GRN}nothing to fix${C_OFF} (selected checks already pass or have no automatic fix)"; return 0; }
+  (( DRY )) && info "${C_BLD}DRY RUN${C_OFF} - nothing is changed. Add --apply to really do it." || info "${C_BLD}APPLYING${C_OFF}"
+  tx_begin
+  local rc=0 refused=0
+  for id in "${todo[@]}"; do
+    printf '\n%s%s%s %s\n' "$C_BLD" "$id" "$C_OFF" "${C_TITLE[$id]}"
+    "fix_${id//-/_}"; local r=$?
+    (( r == 3 )) && refused=$((refused+1))
+  done
+  # post-steps (validate sshd config, reload sysctl)
+  if (( ! DRY )); then
+    if [[ " ${todo[*]} " == *" SSH-"* ]]; then
+      if ! post_ssh; then tx_rollback "$TX_ID"; die "sshd rejected the new config; everything was rolled back."; fi
+    fi
+    [[ " ${todo[*]} " == *" NET-"* || " ${todo[*]} " == *" KRN-"* ]] && post_kernel
+    printf '\n%sdone.%s transaction: %s   undo with: hk rollback %s\n' "$C_GRN" "$C_OFF" "$TX_ID" "$TX_ID"
+  fi
+  (( refused )) && warn "$refused fix(es) were refused by a safety guard (see above)"
+  return $rc
+}
+
+cmd_monitor() {
+  local sub=${1:-once}; shift || true
+  load_config
+  case $sub in
+    once) while (( $# )); do case $1 in
+            --simulate) IFS=, read -ra kv <<<"$2"; for p in "${kv[@]}"; do SIM[${p%%=*}]=${p#*=}; done; shift 2;;
+            *) die "unknown option $1";; esac; done
+          monitor_once ;;
+    install) local mode=systemd apply=0
+             while (( $# )); do case $1 in --systemd) mode=systemd;; --cron) mode=cron;; --apply) apply=1;; esac; shift; done
+             monitor_install "$mode" "$apply" ;;
+    attackers) top_attackers 10 ;;
+    *) die "monitor: once | install | attackers" ;;
+  esac
+}
+
+main() {
+  local cmd=${1:-help}; shift || true
+  load_config
+  case $cmd in
+    audit) cmd_audit "$@" ;;
+    fix) cmd_fix "$@" ;;
+    rollback) [[ $# -ge 1 ]] || die "usage: hk rollback TXID"; tx_rollback "$1" ;;
+    tx) [[ ${1:-} == list ]] && tx_list || die "usage: hk tx list" ;;
+    checks) for id in "${CHECK_IDS[@]}"; do printf '%-8s %-9s %-9s %s\n' "$id" "${C_SEV[$id]}" "${C_CAT[$id]}" "${C_TITLE[$id]}"; done ;;
+    baseline) [[ ${1:-} == create ]] || die "usage: hk baseline create [--root DIR]"; shift; [[ ${1:-} == --root ]] && R=${2%/}; baseline_create ;;
+    drift) [[ ${1:-} == --root ]] && R=${2%/}; baseline_drift ;;
+    monitor) cmd_monitor "$@" ;;
+    version|--version|-v) echo "hk $HK_VERSION" ;;
+    help|--help|-h) usage ;;
+    *) usage; exit 2 ;;
+  esac
+}
+main "$@"

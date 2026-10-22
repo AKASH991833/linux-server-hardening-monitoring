@@ -1,0 +1,22 @@
+# Copy to /etc/hk/hk.conf  (or ~/.config/hk/hk.conf, or ./hk.conf). Plain bash KEY=VALUE.
+# NEVER put passwords/tokens in this file - tokens are read from a separate file (see below).
+
+# ports that are allowed to listen on all interfaces (check SVC-008)
+HK_ALLOWED_PORTS="22 80 443"
+
+# --- monitor ---
+HK_CONSECUTIVE=2            # breaches in a row before the first alert (flap suppression)
+HK_COOLDOWN_MIN=60          # re-alert a still-CRITICAL metric after N minutes
+HK_LOGIN_WINDOW_MIN=10      # window for "failed SSH logins"
+HK_ALERT_CHANNELS="log,stdout"   # any of: log, stdout, webhook, telegram, mail
+
+# webhook (Slack/Discord/Teams/n8n compatible "text" JSON)
+#HK_WEBHOOK_URL="https://hooks.example.com/..."
+# telegram: put the bot token ALONE in a file only root can read:  echo TOKEN > /etc/hk/telegram.token; chmod 600 /etc/hk/telegram.token
+#HK_TELEGRAM_TOKEN_FILE=/etc/hk/telegram.token
+#HK_TELEGRAM_CHAT="123456789"
+#HK_MAIL_TO="ops@example.com"
+
+# thresholds:  TH[metric]="WARN CRIT"   (load is % of CPU cores)
+#TH[mem]="80 92"
+#TH[disk]="75 90"

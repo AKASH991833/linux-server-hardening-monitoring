@@ -1,0 +1,35 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        run: shellcheck -S error -x hk lib/*.sh checks/*.sh tests/*.sh
+      - name: Test suite (offline fixtures, no root needed)
+        run: tests/run.sh
+  live-root:
+    # Real root on a real Ubuntu VM: audit, apply fixes, verify score goes up, roll back.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Live audit as root
+        run: sudo -E ./hk audit --format text | tail -15
+      - name: Apply all safe fixes, then roll back
+        run: |
+          before=$(sudo ./hk audit --format json | grep -o '"score": [0-9]*' | grep -o '[0-9]*$')
+          sudo ./hk fix --apply --all || true
+          after=$(sudo ./hk audit --format json | grep -o '"score": [0-9]*' | grep -o '[0-9]*$')
+          echo "score before=$before after=$after"
+          test "$after" -gt "$before"
+          sudo ./hk tx list
+          sudo ./hk rollback "$(sudo ./hk tx list | head -1 | cut -d' ' -f1)"
+          now=$(sudo ./hk audit --format json | grep -o '"score": [0-9]*' | grep -o '[0-9]*$')
+          test "$now" -eq "$before"
+      - name: Baseline and drift on the live system
+        run: |
+          sudo ./hk baseline create
+          sudo ./hk drift
+      - name: Monitor once
+        run: ./hk monitor once || true
