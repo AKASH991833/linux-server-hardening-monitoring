@@ -100,6 +100,12 @@ B
 post_ssh() {
   is_live || return 0
   command -v sshd >/dev/null 2>&1 || return 0
-  if sshd -t 2>/dev/null; then fx_run systemctl reload ssh || fx_run systemctl reload sshd
-  else warn "sshd -t failed after changes - rolling back automatically"; return 1; fi
+  local out
+  out=$(sshd -t 2>&1) || {
+    if grep -qi "privilege separation" <<<"$out"; then   # fresh VM/container: sshd never started yet
+      mkdir -p /run/sshd 2>/dev/null; out=$(sshd -t 2>&1) && out=""
+    fi
+  }
+  if [[ -z $out ]]; then fx_run systemctl reload ssh || fx_run systemctl reload sshd
+  else warn "sshd -t failed after changes ($(head -1 <<<"$out")) - rolling back automatically"; return 1; fi
 }
