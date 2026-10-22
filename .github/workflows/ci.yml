@@ -19,7 +19,7 @@ jobs:
       - name: Apply all safe fixes, then roll back
         run: |
           before=$(sudo ./hk audit --format json | grep -o '"score": [0-9]*' | grep -o '[0-9]*$')
-          sudo ./hk audit --format json | grep -o '"id": *"[A-Z]*-[0-9]*"[^}]*"status": *"[a-z]*"' | sort > /tmp/before_ids.txt || true
+          sudo ./hk audit --format json | jq -r '.results[]|"\(.id) \(.status)"' | sort > /tmp/before_ids.txt || true
           sudo ./hk fix --apply --all || true
           after=$(sudo ./hk audit --format json | grep -o '"score": [0-9]*' | grep -o '[0-9]*$')
           echo "score before=$before after=$after"
@@ -28,7 +28,7 @@ jobs:
           sudo ./hk rollback "$(sudo ./hk tx list | head -1 | cut -d' ' -f1)"
           now=$(sudo ./hk audit --format json | grep -o '"score": [0-9]*' | grep -o '[0-9]*$')
           echo "score after rollback=$now (before=$before)"
-          sudo ./hk audit --format json | grep -o '"id": *"[A-Z]*-[0-9]*"[^}]*"status": *"[a-z]*"' | sort > /tmp/after_rb.txt || true
+          sudo ./hk audit --format json | jq -r '.results[]|"\(.id) \(.status)"' | sort > /tmp/after_rb.txt || true
           diff /tmp/before_ids.txt /tmp/after_rb.txt || true
           test "$now" -eq "$before"
       - name: Baseline and drift on the live system
