@@ -6,7 +6,7 @@
 - Monitor metrics: `raid_degraded`, `raid_failed`, `vg_used:VG`, `lv_snap:VG/LV`, `thin_data`, `thin_meta`, `lvm_missing_pv`, with recovery notices.
 - Real drills (`tests/storage-live.sh`): md RAID1 degrade and rebuild, LVM snapshot overflow, VG 100% allocated, live `/etc/cron.d` hygiene including `hk fix` and rollback.
 ### Honest limits
-- STO-003/004 only run on a live system with mdadm/lvm2; elsewhere they are skipped, not passed. Snapshot drills need `dm-snapshot` and are skipped in containers where the kernel target is not loadable.
+- STO-003/004 only run on a live system with mdadm/lvm2; elsewhere they are skipped, not passed. Real LVM drills ran on Ubuntu and Debian 12 only; in the other distro containers device-mapper is not usable so they are skipped (RAID and cron drills still run).
 
 ## [1.2.0] - 2026-10-22
 ### Added

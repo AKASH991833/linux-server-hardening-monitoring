@@ -190,7 +190,7 @@ fix_MYORG_001() { fx_write "$(rp /etc/motd)" <<< "Authorized use only"; }
 - Webhook, Telegram and mail channels are covered by mock-server tests; they were not sent to real external accounts.
 - Not a replacement for a full CIS benchmark scanner (OpenSCAP, Lynis). It is a small, readable, safe starting point you can understand end to end.
 
-**v1.3.0 storage tests:** fixtures (hardened = pass, insecure = fail) in `tests/run.sh`; real drills in `tests/storage-live.sh` as root on loop devices: Ubuntu runner (everything), Debian 12 container (everything, host modules mounted); Debian 13, Rocky, Alma, CentOS Stream and Fedora containers run the RAID and cron drills and skip snapshot drills if the kernel target is not loadable. UBI 9 runs fixtures only. See the CI badge for the current state.
+**v1.3.0 storage tests:** fixtures (hardened = pass, insecure = fail) in `tests/run.sh`; real drills in `tests/storage-live.sh` as root on loop devices. Ubuntu runner and Debian 12 container: everything passes (14 checks: md RAID, LVM snapshot overflow, full VG, cron hygiene + fix/rollback). Debian 13, Rocky 9, Alma 9, CentOS Stream 9, Fedora containers: RAID and cron drills run for real (9 checks); LVM drills are skipped because device-mapper is not usable in those containers (the drill prints a NOTE) - real LVM is **not verified** on those distros. UBI 9: fixtures only.
 
 ## Safety notes
 Run `hk fix` without `--apply` first. Keep a second SSH session open when changing SSH settings. hk never touches firewall rules, never restarts services other than reloading sshd after a validated config, and never edits files outside the list in the dry-run output.

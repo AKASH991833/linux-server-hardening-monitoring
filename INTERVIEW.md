@@ -120,7 +120,7 @@ central collector (the Prometheus textfile export is the first step).
 
 **How is it tested without trusting fixtures?** Fixtures prove parsing. The real drill builds md RAID1 and LVM on loop devices, breaks them, and asserts the audit and the monitor alert, then recovers and asserts the RECOVERED notice.
 
-**What does it not do?** STO-003/004 skip rather than pass when mdadm/lvm2 are absent. Container runs share the runner kernel, so snapshot drills need the host `dm-snapshot` module.
+**What does it not do?** STO-003/004 skip rather than pass when mdadm/lvm2 are absent. Container runs share the runner kernel, so real LVM drills ran on Ubuntu and Debian 12 only, other container distros skip them.
 
 ## Honest test status
 See the README "Honest test report" - it is kept in sync with CI and names exactly what ran where.
