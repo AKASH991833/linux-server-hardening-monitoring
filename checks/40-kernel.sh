@@ -9,7 +9,13 @@ _sysctl_expect() { # key expected
   DETAIL="$1 = $v (want $2)"
   [[ $v == "$2" ]]
 }
-_sysctl_fix() { fx_set_kv "$(SYSCTL_DROPIN)" "$1" "$2" " = "; }
+_sysctl_fix() {
+  # remember the live kernel value so rollback can put it back (removing the drop-in alone does not)
+  if is_live && [[ $DRY -eq 0 && -n ${TX_DIR:-} ]] && command -v sysctl >/dev/null 2>&1; then
+    local old; old=$(sysctl -n "$1" 2>/dev/null) && ! grep -q "^$1 " "$TX_DIR/sysctl.undo" 2>/dev/null && printf '%s %s\n' "$1" "$old" >> "$TX_DIR/sysctl.undo"
+  fi
+  fx_set_kv "$(SYSCTL_DROPIN)" "$1" "$2" " = "
+}
 
 register NET-001 high KERNEL "IP forwarding is off (unless this host is a router)"
 chk_NET_001() { _sysctl_expect net.ipv4.ip_forward 0; }

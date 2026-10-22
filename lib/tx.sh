@@ -101,6 +101,9 @@ tx_rollback() {
       absent)  rm -f "$(rp "$rel")"; info "  removed  $rel (did not exist before)" ;;
     esac
   done < <(tac "$d/manifest.tsv")
+  if [[ -z $R && -f $d/sysctl.undo ]] && command -v sysctl >/dev/null 2>&1; then   # live kernel values
+    while read -r k v; do sysctl -w "$k=$v" >/dev/null 2>&1 && info "  kernel $k back to $v"; done < "$d/sysctl.undo"
+  fi
   mv "$d" "$d.rolled-back"
   info "${C_GRN}rollback of $id complete${C_OFF}"
 }
