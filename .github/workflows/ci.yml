@@ -37,15 +37,26 @@ jobs:
           sudo ./hk drift
       - name: Monitor once
         run: ./hk monitor once || true
-  rocky:
-    # Same suite on a RHEL-family distro: Rocky Linux 9 in a container (runs as root).
+  rhel-family:
+    # Same checks across the Red Hat family: Rocky, AlmaLinux, CentOS Stream, Fedora,
+    # and Red Hat UBI 9 (the free official Red Hat image - not a RHEL subscription).
     runs-on: ubuntu-latest
-    container: rockylinux:9
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [rocky-9, alma-9, centos-stream-9, fedora-latest, ubi-9]
+        include:
+          - {distro: rocky-9,          image: rockylinux:9}
+          - {distro: alma-9,           image: almalinux:9}
+          - {distro: centos-stream-9,  image: quay.io/centos/centos:stream9}
+          - {distro: fedora-latest,    image: fedora:latest}
+          - {distro: ubi-9,            image: registry.access.redhat.com/ubi9/ubi:latest}
+    container: ${{ matrix.image }}
     steps:
       - name: Install test dependencies (dnf)
         run: dnf install -y -q git bash diffutils findutils procps-ng gawk sed grep python3 util-linux hostname shadow-utils which tar gzip
       - uses: actions/checkout@v4
-      - name: Test suite on Rocky 9
+      - name: Test suite on ${{ matrix.distro }}
         run: tests/run.sh
       - name: Live audit on a RHEL-family system
         run: ./hk audit --format text | tail -12
