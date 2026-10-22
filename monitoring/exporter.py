@@ -11,6 +11,7 @@ def collect():
     global CACHE
     start=time.monotonic()
     try:
+        (STATE/'hk.prom').unlink(missing_ok=True)
         subprocess.run([str(HOME/'hk'),'monitor','once'],capture_output=True,timeout=25,check=False)
         text=(STATE/'hk.prom').read_text()
         payload=(text+'\n# TYPE hk_exporter_success gauge\nhk_exporter_success 1\n# TYPE hk_collection_timestamp_seconds gauge\nhk_collection_timestamp_seconds '+str(time.time())+'\n# TYPE hk_collection_duration_seconds gauge\nhk_collection_duration_seconds '+str(time.monotonic()-start)+'\n').encode()

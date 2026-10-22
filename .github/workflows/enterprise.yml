@@ -10,8 +10,8 @@ jobs:
       - run: ./ansible/test.sh
       - name: Real live VM selected fixes and idempotence
         run: |
-          sudo ansible-playbook -i localhost, ansible/test.yml -e hk_source=$PWD -e hk_install_dir=/opt/hk -e hk_apply=true -e '{"hk_fix_ids":["SSH-003","SSH-005","SSH-006","ACC-004","ACC-005"]}'
-          sudo ansible-playbook -i localhost, ansible/test.yml -e hk_source=$PWD -e hk_install_dir=/opt/hk -e hk_apply=true -e '{"hk_fix_ids":["SSH-003","SSH-005","SSH-006","ACC-004","ACC-005"]}' | tee /tmp/second
+          sudo "$(command -v ansible-playbook)" -i localhost, ansible/test.yml -e hk_source=$PWD -e hk_install_dir=/opt/hk -e hk_apply=true -e '{"hk_fix_ids":["SSH-003","SSH-005","SSH-006","ACC-004","ACC-005"]}'
+          sudo "$(command -v ansible-playbook)" -i localhost, ansible/test.yml -e hk_source=$PWD -e hk_install_dir=/opt/hk -e hk_apply=true -e '{"hk_fix_ids":["SSH-003","SSH-005","SSH-006","ACC-004","ACC-005"]}' | tee /tmp/second
           grep -q 'changed=0 ' /tmp/second
   incident-and-crosswalk:
     runs-on: ubuntu-latest
