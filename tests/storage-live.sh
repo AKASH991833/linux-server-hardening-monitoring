@@ -23,6 +23,7 @@ if [[ -n ${STORAGE_NO_UDEV:-} ]]; then
   grep -q 'conf.d' /etc/lvm/lvm.conf 2>/dev/null || printf 'activation {\n udev_sync = 0\n udev_rules = 0\n}\n' >> /etc/lvm/lvm.conf
 fi
 echo "lvm: $(lvm version 2>&1 | head -1 | xargs)"; mdadm --version 2>&1 | head -1
+LVMOK=0; modprobe dm-mod 2>/dev/null; _pf=$(mktemp); truncate -s 48M "$_pf"; _pl=$(losetup -f --show "$_pf" 2>/dev/null); if [[ -n $_pl ]] && pvcreate -y "$_pl" >/dev/null 2>&1 && vgcreate vgprobe "$_pl" >/dev/null 2>&1 && lvcreate -y -n p -L 8M vgprobe >/dev/null 2>&1 && [[ -b /dev/vgprobe/p ]]; then LVMOK=1; fi; vgremove -ff vgprobe >/dev/null 2>&1; [[ -n $_pl ]] && { pvremove -ff -y "$_pl" >/dev/null 2>&1; losetup -d "$_pl" 2>/dev/null; }; rm -f "$_pf"; (( LVMOK )) || echo "NOTE: LVM cannot create logical volumes in this container (device-mapper not usable) - LVM drills SKIPPED, RAID drills still run"
 modprobe dm-snapshot 2>/dev/null; SNAPOK=0; dmsetup targets 2>/dev/null | grep -qw snapshot && SNAPOK=1; (( SNAPOK )) || echo "NOTE: kernel dm-snapshot target unavailable in this container - snapshot drills SKIPPED (they run on the Ubuntu runner job)"
 export HK_CONSECUTIVE=1 HK_ALERT_CHANNELS=stdout
 
@@ -43,6 +44,7 @@ assert "RECOVERED notice after the real rebuild"           'grep -q "RECOVERED: 
 assert "STO-003 passes again"                              '$HK audit --only STO-003 --format json | grep -q "\"status\":\"PASS\""'
 mdadm --stop "$MD" >/dev/null 2>&1
 
+if (( LVMOK )); then
 echo "== real LVM: snapshot overflow + full VG"
 L1=$(mkloop pv1 300M)
 pvcreate -y "$L1" >/dev/null 2>&1 && vgcreate vgh "$L1" >/dev/null 2>&1 && lvcreate -y -n data -L 100M vgh >/dev/null 2>&1 || { bad "lvm setup"; exit 1; }
@@ -63,6 +65,7 @@ assert "STO-004 FAILS when the VG is 100%% allocated"       'grep -q "VG:vgh" <<
 rm -f "$HK_STATE/monitor.state"; out=$($HK monitor once 2>&1)
 assert "monitor: vg_used CRIT"                             'grep -q "CRIT: vg_used:vgh = 100" <<<"$out"'
 umount "$T/m"; vgchange -an vgh >/dev/null 2>&1; vgremove -ff vgh >/dev/null 2>&1
+fi
 
 echo "== live cron hygiene (/etc/cron.d on this machine)"
 mkdir -p /etc/cron.d /opt; printf '#!/bin/sh\ntrue\n' > /opt/hk-drill-backup.sh; chmod 777 /opt/hk-drill-backup.sh
