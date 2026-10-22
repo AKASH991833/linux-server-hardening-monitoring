@@ -1,0 +1,63 @@
+name: Enterprise modules
+on: [push, pull_request]
+permissions: {contents: read}
+jobs:
+  ansible:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install ansible-core
+      - run: ./ansible/test.sh
+      - name: Real live VM selected fixes and idempotence
+        run: |
+          sudo ansible-playbook -i localhost, ansible/test.yml -e hk_source=$PWD -e hk_install_dir=/opt/hk -e hk_apply=true -e '{"hk_fix_ids":["SSH-003","SSH-005","SSH-006","ACC-004","ACC-005"]}'
+          sudo ansible-playbook -i localhost, ansible/test.yml -e hk_source=$PWD -e hk_install_dir=/opt/hk -e hk_apply=true -e '{"hk_fix_ids":["SSH-003","SSH-005","SSH-006","ACC-004","ACC-005"]}' | tee /tmp/second
+          grep -q 'changed=0 ' /tmp/second
+  incident-and-crosswalk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          ./incidents/run.sh incident-output
+          python3 compliance/report.py
+          python3 tests/enterprise.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: incident-report
+          path: incident-output
+  monitoring:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker run --rm --entrypoint promtool -v "$PWD/monitoring:/work" -w /work prom/prometheus:v3.2.1 check config prometheus.yml
+          docker run --rm --entrypoint promtool -v "$PWD/monitoring:/work" -w /work prom/prometheus:v3.2.1 test rules alerts.test.yml
+      - name: Start real exporter, Prometheus, Grafana
+        run: docker compose -f monitoring/compose.yml up --build -d
+      - name: Wait for actual metrics and dashboard
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/api/health && curl -fsS http://localhost:9108/metrics | grep -q 'hk_exporter_success 1'; then break; fi
+            sleep 2
+          done
+          curl -fsS http://localhost:3000/api/dashboards/uid/hk-operations | jq -e '.dashboard.panels | length == 6'
+          for i in $(seq 1 30); do
+            curl -fsSG http://localhost:9090/api/v1/query --data-urlencode 'query=hk_exporter_success' > /tmp/query.json
+            jq -e '.data.result[0].value[1] == "1"' /tmp/query.json && break
+            sleep 2
+          done
+          jq -e '.data.result[0].value[1] == "1"' /tmp/query.json
+      - name: Screenshot live Grafana dashboard
+        run: |
+          npm install playwright
+          npx playwright install --with-deps chromium
+          node monitoring/screenshot.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: grafana-screenshot
+          path: monitoring/screenshots
+      - if: always()
+        run: docker compose -f monitoring/compose.yml logs --no-color
+      - if: always()
+        run: docker compose -f monitoring/compose.yml down -v

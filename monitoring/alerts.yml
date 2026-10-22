@@ -1,0 +1,33 @@
+groups:
+  - name: hk
+    rules:
+      - alert: HkMemoryCritical
+        expr: hk_metric{name="mem"} >= 95
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: 'Memory above 95% for 2 minutes'}
+      - alert: HkDiskCritical
+        expr: hk_metric{name=~"disk:.*"} >= 90
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: 'Filesystem above 90% for 2 minutes'}
+      - alert: HkRaidDegraded
+        expr: hk_metric{name="raid_degraded"} > 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: 'RAID array degraded'}
+      - alert: HkSshFailures
+        expr: hk_metric{name="logins"} >= 100
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: 'At least 100 failed SSH logins in the configured window'}
+      - alert: HkExporterFailed
+        expr: hk_exporter_success == 0 or up{job="hk"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: 'Collector or scrape failed'}
+      - alert: HkMetricsStale
+        expr: time() - hk_collection_timestamp_seconds > 120
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: 'Collection is stale'}

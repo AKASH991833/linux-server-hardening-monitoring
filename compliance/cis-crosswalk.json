@@ -1,0 +1,402 @@
+[
+  {
+    "check": "SSH-001",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "5.1.20",
+    "page": "550",
+    "coverage": "partial: hk permits prohibit-password; benchmark requires no; Match contexts need manual audit",
+    "source": "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jKUHPmZOdshGaLyHuw9GJGsLSRcNzYSo5QtrD8cSkie64pqYKOjejzN3-WX-Wo6O/n/idnreg0ywhtg/b/medium/o/CIS_Ubuntu_Linux_22.04_LTS_Benchmark_v2.0.0.pdf"
+  },
+  {
+    "check": "SSH-002",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "SSH-003",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "5.1.19",
+    "page": "548",
+    "coverage": "partial: Match contexts need sshd -T -C verification",
+    "source": "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jKUHPmZOdshGaLyHuw9GJGsLSRcNzYSo5QtrD8cSkie64pqYKOjejzN3-WX-Wo6O/n/idnreg0ywhtg/b/medium/o/CIS_Ubuntu_Linux_22.04_LTS_Benchmark_v2.0.0.pdf"
+  },
+  {
+    "check": "SSH-004",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "SSH-005",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "5.1.16",
+    "page": "542",
+    "coverage": "partial: Match contexts need sshd -T -C verification",
+    "source": "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jKUHPmZOdshGaLyHuw9GJGsLSRcNzYSo5QtrD8cSkie64pqYKOjejzN3-WX-Wo6O/n/idnreg0ywhtg/b/medium/o/CIS_Ubuntu_Linux_22.04_LTS_Benchmark_v2.0.0.pdf"
+  },
+  {
+    "check": "SSH-006",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "5.1.13",
+    "page": "535",
+    "coverage": "partial: Match contexts need sshd -T -C verification",
+    "source": "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jKUHPmZOdshGaLyHuw9GJGsLSRcNzYSo5QtrD8cSkie64pqYKOjejzN3-WX-Wo6O/n/idnreg0ywhtg/b/medium/o/CIS_Ubuntu_Linux_22.04_LTS_Benchmark_v2.0.0.pdf"
+  },
+  {
+    "check": "SSH-007",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "5.1.7",
+    "page": "520",
+    "coverage": "partial: site policy and Match contexts need review",
+    "source": "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jKUHPmZOdshGaLyHuw9GJGsLSRcNzYSo5QtrD8cSkie64pqYKOjejzN3-WX-Wo6O/n/idnreg0ywhtg/b/medium/o/CIS_Ubuntu_Linux_22.04_LTS_Benchmark_v2.0.0.pdf"
+  },
+  {
+    "check": "SSH-008",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "5.1.6",
+    "page": "517",
+    "coverage": "partial: cipher subset only, not complete benchmark audit",
+    "source": "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jKUHPmZOdshGaLyHuw9GJGsLSRcNzYSo5QtrD8cSkie64pqYKOjejzN3-WX-Wo6O/n/idnreg0ywhtg/b/medium/o/CIS_Ubuntu_Linux_22.04_LTS_Benchmark_v2.0.0.pdf"
+  },
+  {
+    "check": "SSH-009",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "5.1.5",
+    "page": "515",
+    "coverage": "partial: banner contents need manual review",
+    "source": "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jKUHPmZOdshGaLyHuw9GJGsLSRcNzYSo5QtrD8cSkie64pqYKOjejzN3-WX-Wo6O/n/idnreg0ywhtg/b/medium/o/CIS_Ubuntu_Linux_22.04_LTS_Benchmark_v2.0.0.pdf"
+  },
+  {
+    "check": "ACC-001",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "5.4.2.1",
+    "page": "671",
+    "coverage": "related: UID 0 predicate matches",
+    "source": "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jKUHPmZOdshGaLyHuw9GJGsLSRcNzYSo5QtrD8cSkie64pqYKOjejzN3-WX-Wo6O/n/idnreg0ywhtg/b/medium/o/CIS_Ubuntu_Linux_22.04_LTS_Benchmark_v2.0.0.pdf"
+  },
+  {
+    "check": "ACC-002",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "ACC-003",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "ACC-004",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "ACC-005",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "ACC-006",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "ACC-007",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "ACC-008",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "ACC-009",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "7.2.5",
+    "page": "918",
+    "coverage": "related: duplicate UID predicate matches",
+    "source": "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jKUHPmZOdshGaLyHuw9GJGsLSRcNzYSo5QtrD8cSkie64pqYKOjejzN3-WX-Wo6O/n/idnreg0ywhtg/b/medium/o/CIS_Ubuntu_Linux_22.04_LTS_Benchmark_v2.0.0.pdf"
+  },
+  {
+    "check": "ACC-010",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "ACC-011",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "FS-001",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "FS-002",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "FS-003",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "FS-004",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "FS-005",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "FS-006",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "NET-001",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "NET-002",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "NET-003",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "NET-004",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "NET-005",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "NET-006",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "KRN-001",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "1.5.1",
+    "page": "151",
+    "coverage": "partial: persistent and runtime configuration both require verification",
+    "source": "https://objectstorage.us-ashburn-1.oraclecloud.com/p/jKUHPmZOdshGaLyHuw9GJGsLSRcNzYSo5QtrD8cSkie64pqYKOjejzN3-WX-Wo6O/n/idnreg0ywhtg/b/medium/o/CIS_Ubuntu_Linux_22.04_LTS_Benchmark_v2.0.0.pdf"
+  },
+  {
+    "check": "KRN-002",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "KRN-003",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "SVC-001",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "SVC-002",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "SVC-003",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "SVC-004",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "SVC-005",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "SVC-006",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "SVC-007",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "SVC-008",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "STO-001",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "STO-002",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "STO-003",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "STO-004",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "CRN-001",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "CRN-002",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  },
+  {
+    "check": "CRN-003",
+    "benchmark": "CIS Ubuntu Linux 22.04 LTS v2.0.0",
+    "control": "",
+    "page": "",
+    "coverage": "unmapped: no verified direct benchmark reference",
+    "source": ""
+  }
+]

@@ -1,0 +1,7 @@
+---
+hk_source: "{{ playbook_dir }}/.."
+hk_install_dir: /opt/hk
+hk_target_root: ""
+hk_state_dir: /var/lib/hk
+hk_fix_ids: [SSH-003, SSH-005, SSH-006, SSH-009, ACC-003, ACC-004, ACC-005, ACC-006, KRN-001]
+hk_apply: false

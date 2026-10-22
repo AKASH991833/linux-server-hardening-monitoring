@@ -1,0 +1,16 @@
+rule_files: [alerts.yml]
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'hk_metric{name="mem",job="hk"}'
+        values: '96 96 96 96 50 50 50'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: HkMemoryCritical
+        exp_alerts:
+          - exp_labels: {severity: critical, name: mem, job: hk}
+            exp_annotations: {summary: 'Memory above 95% for 2 minutes'}
+      - eval_time: 6m
+        alertname: HkMemoryCritical
+        exp_alerts: []

@@ -1,0 +1,2 @@
+const {chromium} = require('playwright');
+(async()=>{const b=await chromium.launch({headless:true});const p=await b.newPage({viewport:{width:1440,height:1200}});await p.goto('http://localhost:3000/d/hk-operations?orgId=1&kiosk',{waitUntil:'networkidle'});await p.getByText('Memory used',{exact:true}).waitFor();await p.locator('canvas').first().waitFor();await p.screenshot({path:'monitoring/screenshots/grafana.png',fullPage:true});await b.close();})();

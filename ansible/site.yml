@@ -1,0 +1,7 @@
+---
+- name: Harden a small batch at a time
+  hosts: linux
+  become: true
+  serial: 2
+  roles:
+    - hk_hardening

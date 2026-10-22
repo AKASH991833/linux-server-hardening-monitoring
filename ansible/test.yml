@@ -1,0 +1,7 @@
+---
+- name: Local isolated rootfs integration test
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - hk_hardening

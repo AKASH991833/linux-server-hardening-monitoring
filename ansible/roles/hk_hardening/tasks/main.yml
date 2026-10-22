@@ -1,0 +1,48 @@
+---
+- name: Check supported OS family
+  ansible.builtin.assert:
+    that: ansible_os_family in ['Debian', 'RedHat']
+- name: Create installation directory
+  ansible.builtin.file:
+    path: "{{ hk_install_dir }}"
+    state: directory
+    mode: '0755'
+- name: Install private tool files
+  ansible.builtin.copy:
+    src: "{{ hk_source }}/{{ item }}"
+    dest: "{{ hk_install_dir }}/"
+    mode: preserve
+  loop: [hk, lib, checks, config]
+- name: Audit selected checks before applying
+  ansible.builtin.command:
+    argv: "{{ [hk_install_dir + '/hk', 'audit', '--format', 'json', '--only', hk_fix_ids | join(',')] + (['--root', hk_target_root] if hk_target_root else []) }}"
+  environment:
+    HK_STATE: "{{ hk_state_dir }}"
+    NO_COLOR: '1'
+  register: hk_before
+  changed_when: false
+  check_mode: false
+- name: Show audit score and plan
+  ansible.builtin.debug:
+    msg: "Score={{ (hk_before.stdout | from_json).score }}; apply={{ hk_apply | bool }}; selected={{ hk_fix_ids }}"
+- name: Apply only selected failing fixable checks
+  ansible.builtin.command:
+    argv: "{{ [hk_install_dir + '/hk', 'fix', '--apply'] + (['--root', hk_target_root] if hk_target_root else []) + hk_fix_ids }}"
+  environment:
+    HK_STATE: "{{ hk_state_dir }}"
+    NO_COLOR: '1'
+  register: hk_fix
+  changed_when: "'transaction:' in hk_fix.stdout"
+  when: hk_apply | bool
+- name: Audit after apply
+  ansible.builtin.command:
+    argv: "{{ [hk_install_dir + '/hk', 'audit', '--format', 'json', '--only', hk_fix_ids | join(',')] + (['--root', hk_target_root] if hk_target_root else []) }}"
+  environment:
+    HK_STATE: "{{ hk_state_dir }}"
+  register: hk_after
+  changed_when: false
+  when: hk_apply | bool and not ansible_check_mode
+- name: Verify all selected checks pass or skip
+  ansible.builtin.assert:
+    that: (hk_after.stdout | from_json).fail == 0
+  when: hk_apply | bool and not ansible_check_mode

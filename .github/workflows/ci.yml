@@ -8,7 +8,10 @@ jobs:
       - name: ShellCheck
         run: shellcheck -S error -x hk lib/*.sh checks/*.sh tests/*.sh
       - name: Test suite (offline fixtures, no root needed)
-        run: tests/run.sh
+        run: |
+          tests/run.sh
+          ./incidents/run.sh /tmp/incident-output
+          python3 tests/enterprise.py
   live-root:
     # Real root on a real Ubuntu VM: audit, apply fixes, verify score goes up, roll back.
     runs-on: ubuntu-latest
@@ -122,7 +125,10 @@ jobs:
         run: dnf install -y -q git bash diffutils findutils procps-ng gawk sed grep python3 util-linux hostname shadow-utils which tar gzip
       - uses: actions/checkout@v4
       - name: Test suite on ${{ matrix.distro }}
-        run: tests/run.sh
+        run: |
+          tests/run.sh
+          ./incidents/run.sh /tmp/incident-output
+          python3 tests/enterprise.py
       - name: Live audit on a RHEL-family system
         run: ./hk audit --format text | tail -12
   debian:
@@ -145,6 +151,9 @@ jobs:
           apt-get install -y -qq --no-install-recommends git bash diffutils findutils procps gawk sed grep python3 util-linux hostname passwd tar gzip curl ca-certificates
       - uses: actions/checkout@v4
       - name: Test suite on ${{ matrix.distro }}
-        run: tests/run.sh
+        run: |
+          tests/run.sh
+          ./incidents/run.sh /tmp/incident-output
+          python3 tests/enterprise.py
       - name: Live audit on a Debian system
         run: ./hk audit --format text | tail -12
